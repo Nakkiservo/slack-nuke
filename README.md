@@ -3,6 +3,7 @@
 ## Usage
 
   make
+
   ./slack-nuke <channel name>
 
 
