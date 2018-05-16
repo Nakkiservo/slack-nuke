@@ -4,7 +4,7 @@
 
 ```
   make
-  ./slack-nuke <channel name>
+  ./slack-nuke -api_key <your key here> -target <channel name>
 ```
 
 ## OR if you want, just run this in bash instead
