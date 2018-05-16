@@ -9,15 +9,16 @@ import (
   "flag"
 )
 
-const NUM_WORKERS = 10
-const RATE_LIMIT_SECONDS = 2
-
+var numWorkers = 10
+var rateLimit = 2
 var slackToken string
 var targetName string
 
 func init() {
   flag.StringVar(&slackToken, "api_key", "", "Slack bearer token for authentication.")
   flag.StringVar(&targetName, "target","", "Slack channel or username to delete files from")
+  flag.IntVar(&numWorkers, "workers", 10, "Number of worker jobs for api calls.")
+  flag.IntVar(&rateLimit, "rate_limit", 2, "Number of seconds (per worker) to wait between api calls.")
   flag.Parse()
 }
 
@@ -151,7 +152,7 @@ func DeleteFiles(file_ids []string) {
   fmt.Printf("%d jobs\n", len(file_ids))
   fmt.Println("Starting workers.")
 
-  for w := 1; w <= NUM_WORKERS; w++ {
+  for w := 1; w <= numWorkers; w++ {
     go DeleteWorker(w, jobs, results)
   }
 
@@ -176,7 +177,7 @@ func DeleteWorker(id int, jobs <-chan string, results chan<- error) {
     if err != nil {
       fmt.Printf("Worker %d: unable to delete file id '%s': %s\n", id, job, err.Error())
     }
-    time.Sleep(time.Second * time.Duration(RATE_LIMIT_SECONDS))
+    time.Sleep(time.Second * time.Duration(rateLimit))
     results <- err
   }
 }
