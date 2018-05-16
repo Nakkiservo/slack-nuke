@@ -1,28 +1,40 @@
 package main
 
 import (
-  "os"
   "fmt"
   "net/http"
   "encoding/json"
   "time"
   "bytes"
+  "flag"
 )
 
-const TOKEN = "your token here"
 const NUM_WORKERS = 10
 const RATE_LIMIT_SECONDS = 2
+
+var slackToken string
+var targetName string
+
+func init() {
+  flag.StringVar(&slackToken, "api_key", "", "Slack bearer token for authentication.")
+  flag.StringVar(&targetName, "target","", "Slack channel or username to delete files from")
+  flag.Parse()
+}
 
 func main() {
   fmt.Println("NUKING ALL THE THINGS!")
 
-  if len(os.Args) < 2 {
-    fmt.Println("Usage: slack-nuke <channel name>")
+  if slackToken == "" {
+    fmt.Println("No slack token provided. Api operations impossible.")
     return
   }
 
-  target := os.Args[1]
-  fmt.Println("Target: #", target)
+  if targetName == "" {
+    fmt.Println("No target spesified. Use the -target flag to set target")
+    return
+  }
+
+  fmt.Println("Target: #", targetName)
 
   channels, err := GetChannelList()
 
@@ -37,7 +49,7 @@ func main() {
     chanList := list.([]interface{})
     for _, v := range chanList {
       chanInfo := v.(map[string]interface{})
-      if chanInfo["name"] == target {
+      if chanInfo["name"] == targetName {
         fmt.Print("FOUND!\n")
         channel_id = chanInfo["id"].(string)
         break
@@ -48,7 +60,7 @@ func main() {
   }
 
   if channel_id == "" {
-    fmt.Printf(" unable to find channel #%s\n", target)
+    fmt.Printf(" unable to find channel #%s\n", targetName)
     return
   }
 
@@ -73,7 +85,7 @@ func GetChannelList() (map[string]interface{}, error) {
   }
 
   q := req.URL.Query()
-  q.Add("token", TOKEN)
+  q.Add("token", slackToken)
 
   req.URL.RawQuery = q.Encode()
 
@@ -100,7 +112,7 @@ func GetFileList(channel_id string) ([]string, error) {
   }
 
   q := req.URL.Query()
-  q.Add("token", TOKEN)
+  q.Add("token", slackToken)
   q.Add("channel", channel_id)
   q.Add("count", fmt.Sprintf("%d", 200)) // 200 items per list, for now...
 
@@ -180,7 +192,7 @@ func doDelete(file_id string) error {
 
   r, _ := http.NewRequest("POST", apiUrl, b)
   r.Header.Add("Content-Type", "application/json")
-  r.Header.Add("Authorization", "Bearer " + TOKEN)
+  r.Header.Add("Authorization", "Bearer " + slackToken)
 
   client := http.Client{}
 
@@ -197,7 +209,6 @@ func doDelete(file_id string) error {
   if okResp, ok := responseData["ok"]; ok {
     k := okResp.(bool)
     if !k {
-      fmt.Println("Response is false!")
       fmt.Println(responseData)
       return fmt.Errorf("Response not ok!")
     }
