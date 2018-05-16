@@ -22,19 +22,32 @@ func init() {
   flag.Parse()
 }
 
+
+// usage prints out usage, duh
+func usage() {
+  fmt.Println("usage: slack-nuke -api_key <key> -target <target name> [flags]")
+  fmt.Println()
+  fmt.Println("Available flags: ")
+  fmt.Println()
+  fmt.Println("-workers\t\tSet the amount of HTTP worker clients. Default 10. ")
+  fmt.Println("-rate_limit\t\tAmount of seconds to wait between requests (per client). Default 2. ")
+}
+
 func main() {
-  fmt.Println("NUKING ALL THE THINGS!")
 
   if slackToken == "" {
     fmt.Println("You need to provide a valid API token.")
+    usage()
     return
   }
 
   if targetName == "" {
     fmt.Println("No target specified. Use the -target flag to set target")
+    usage()
     return
   }
 
+  fmt.Println("NUKING ALL THE THINGS!")
   fmt.Println("Target: #", targetName)
 
 
