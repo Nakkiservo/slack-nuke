@@ -26,40 +26,19 @@ func main() {
   fmt.Println("NUKING ALL THE THINGS!")
 
   if slackToken == "" {
-    fmt.Println("No slack token provided. Api operations impossible.")
+    fmt.Println("You need to provide a valid API token.")
     return
   }
 
   if targetName == "" {
-    fmt.Println("No target spesified. Use the -target flag to set target")
+    fmt.Println("No target specified. Use the -target flag to set target")
     return
   }
 
   fmt.Println("Target: #", targetName)
 
-  channels, err := GetChannelList()
 
-  if err != nil {
-    panic(err)
-  }
-
-  fmt.Printf("Locating target channel....")
-  var channel_id string
-
-  if list, ok := channels["channels"]; ok {
-    chanList := list.([]interface{})
-    for _, v := range chanList {
-      chanInfo := v.(map[string]interface{})
-      if chanInfo["name"] == targetName {
-        fmt.Print("FOUND!\n")
-        channel_id = chanInfo["id"].(string)
-        break
-      }
-    }
-  } else {
-    fmt.Println("No channels returned")
-  }
-
+  channel_id := FindChannelID(targetName)
   if channel_id == "" {
     fmt.Printf(" unable to find channel #%s\n", targetName)
     return
@@ -76,6 +55,29 @@ func main() {
   }
 }
 
+// FindChannelID returns the id for current channel, or an empty string if none was found
+func FindChannelID(name string) string {
+  channels, err := GetChannelList()
+
+  if err != nil {
+    return ""
+  }
+
+  var channelId string
+
+  if list, ok := channels["channels"]; ok {
+    chanList := list.([]interface{})
+    for _, v := range chanList {
+      chanInfo := v.(map[string]interface{})
+      if chanInfo["name"] == name {
+        channelId = chanInfo["id"].(string)
+        break
+      }
+    }
+  }
+
+  return channelId
+}
 func GetChannelList() (map[string]interface{}, error) {
   apiUrl := "https://slack.com/api/channels.list"
 
